@@ -1,78 +1,22 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from data import get_train_loader, get_test_loader
-
-BATCH_SIZE = 2
-LATENT_DIM = 12
-
-
-# Encoder
-class Encoder(nn.Module):
-    def __init__(self):
-        super(Encoder, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=2, padding=1)  # 28 -> 14
-        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1)  # 14 -> 7
-        self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=0)  # 7 -> 5
-
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        return x
-
-
-# Fully Connected Layers
-class FullyConnected(nn.Module):
-    def __init__(self):
-        super(FullyConnected, self).__init__()
-        self.fc1 = nn.Linear(in_features=128 * 5 * 5, out_features=LATENT_DIM)
-        self.fc2 = nn.Linear(in_features=LATENT_DIM, out_features=128 * 5 * 5)
-
-    def forward(self, x):
-        x = x.view(x.size(0), -1)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = x.view(x.size(0), 128, 5, 5)
-        return x
-
-
-# Decoder
-class Decoder(nn.Module):
-    def __init__(self):
-        super(Decoder, self).__init__()
-        self.deconv1 = nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=3, padding=0)  # 5 -> 7
-        self.deconv2 = nn.ConvTranspose2d(in_channels=64, out_channels=32, kernel_size=3, stride=2, padding=1,
-                                          output_padding=1)  # 7 -> 14
-        self.deconv3 = nn.ConvTranspose2d(in_channels=32, out_channels=1, kernel_size=3, stride=2, padding=1,
-                                          output_padding=1)  # 14 -> 28
-
-    def forward(self, x):
-        x = F.relu(self.deconv1(x))
-        x = F.relu(self.deconv2(x))
-        x = torch.tanh(self.deconv3(x))
-        return x
-
-
-# Autoencoder
-class Autoencoder(nn.Module):
-    def __init__(self):
-        super(Autoencoder, self).__init__()
-        self.encoder = Encoder()
-        self.fc = FullyConnected()
-        self.decoder = Decoder()
-
-    def forward(self, x):
-        x = self.encoder(x)
-        x = self.fc(x)
-        x = self.decoder(x)
-        return x
+from data_loading import get_train_loader, get_test_loader
+from models import Autoencoder, GitAutoencoder
+from datetime import datetime
+from plots import plot
 
 
 # Training and Evaluation
-def train_model(model, criterion, optimizer, dataloader, num_epochs=20):
+def train_model(model, criterion, optimizer, train_loader, test_loader, num_epochs=20):
+    train_losses = []
+    test_losses = []
+
     for epoch in range(num_epochs):
-        for images, _ in dataloader:
+        model.train()
+        # train_loss = 0.0
+
+        for images, _ in train_loader:
+            images = images.to(DEVICE)
             outputs = model(images)
             loss = criterion(outputs, images)
 
@@ -80,31 +24,51 @@ def train_model(model, criterion, optimizer, dataloader, num_epochs=20):
             loss.backward()
             optimizer.step()
 
-        evaluate(model, dataloader)
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
-    print('Finished Training')
+            # train_loss += loss.item() * images.size(0)
+
+        # train_loss /= len(train_loader.dataset)
+        train_loss = evaluate(model, train_loader, criterion)
+        train_losses.append(train_loss)
+
+        test_loss = evaluate(model, test_loader, criterion)
+        test_losses.append(test_loss)
+
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss}')
+
+    model_name = model.__class__.__name__
+    current_time = datetime.now().strftime("%H:%M:%S_%d-%B-%Y")
+    torch.save(ae, f"models/{model_name}_{current_time}")
+    plot([train_losses, test_losses], f"{model_name}_plot_{current_time}")
+    print('Finished Training, saved', model_name, 'in models/ folder and saved plots in plots/ folder')
 
 
-# Evaluation: Comparing input vs. reconstructed images
-def evaluate(model, dataloader):
+def evaluate(model, dataloader, criterion):
     model.eval()
+    test_loss = 0.0
     with torch.no_grad():
         for images, _ in dataloader:
+            images = images.to(DEVICE)
             outputs = model(images)
-            # Here you can visualize or save the input and output images for comparison
-            break  # Just for the example, evaluate on one batch
+            loss = criterion(outputs, images)
+            test_loss += loss.item() * images.size(0)
+
+    test_loss /= len(dataloader.dataset)
+    return test_loss
 
 
 if __name__ == "__main__":
+    BATCH_SIZE = 256
+
+    DEVICE = torch.device(
+        "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    print(f"Using device: {DEVICE}")
+
     train_loader = get_train_loader(batch_size=BATCH_SIZE, shuffle=True)
     test_loader = get_test_loader(batch_size=BATCH_SIZE, shuffle=False)
-    sample_input = next(iter(train_loader))[0]  # Get the first image from the first batch
-    print(sample_input.shape)
 
-    encoder_ = Encoder()
-    fully_connected_ = FullyConnected()
-    decoder_ = Decoder()
-    ae = Autoencoder()
-    decoded_output = ae(sample_input)
+    ae = Autoencoder().to(DEVICE)
+    # ae = GitAutoencoder().to(DEVICE)
 
-    print("Decoded output shape:", decoded_output.shape)
+    criterion = nn.L1Loss()
+    optimizer = torch.optim.Adam(ae.parameters(), lr=1e-5)
+    train_model(ae, criterion, optimizer, train_loader, test_loader, num_epochs=5)
