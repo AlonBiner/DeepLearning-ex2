@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from data_loading import get_train_loader, get_test_loader
-from models import Autoencoder, GitAutoencoder, AE
+from models import Autoencoder
 from datetime import datetime
 from plots import plot, plot_images
 
@@ -33,12 +33,7 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, num_epoc
         test_losses.append(test_loss)
 
         print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss}')
-
-    model_name = model.__class__.__name__
-    current_time = datetime.now().strftime("%H:%M:%S_%d-%B-%Y")
-    torch.save(model, f"models/{model_name}_{current_time}")
-    plot([train_losses, test_losses], f"{model_name}_plot_{current_time}")
-    print('Finished Training, saved', model_name, 'in models/ folder and saved plots in plots/ folder')
+    return train_losses, test_losses
 
 
 def evaluate(model, dataloader, criterion):
@@ -55,66 +50,38 @@ def evaluate(model, dataloader, criterion):
     return test_loss
 
 
-def whole_train(model):
-    model.to(DEVICE)
-    BATCH_SIZE = 32
+def whole_train():
+    batch_size = 32
+    epochs = 20
 
-    train_loader = get_train_loader(batch_size=BATCH_SIZE, shuffle=True)
-    test_loader = get_test_loader(batch_size=BATCH_SIZE, shuffle=False)
+    train_loader = get_train_loader(batch_size=batch_size, shuffle=True)
+    test_loader = get_test_loader(batch_size=batch_size, shuffle=False)
 
-    print("Model output shape is:", model(torch.randn(1, 1, 28, 28).to(DEVICE)).shape)
+    autoencoder = Autoencoder().to(DEVICE)
+    device = next(autoencoder.parameters()).device
+    print("Model is on device:", device)
 
     criterion = nn.L1Loss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
-    train_model(model, criterion, optimizer, train_loader, test_loader, num_epochs=3)
+    optimizer = torch.optim.Adam(autoencoder.parameters(), lr=1e-3)
+    train_loss, test_loss = train_model(autoencoder, criterion, optimizer, train_loader, test_loader, num_epochs=epochs)
 
-    PLOT_SIZE = 5
-    model.eval()
+    # Model saving and plotting
+    model_name = autoencoder.__class__.__name__
+    current_time = datetime.now().strftime("%H:%M:%S_%d-%B-%Y")
+    lr = optimizer.param_groups[0]['lr']
+    name = f"{model_name}_{current_time}_lr_{lr}"
+    torch.save(autoencoder, f"models/{name}")
+    plot([train_loss, test_loss], f"plots/{name}")
+    print('Finished Training, saved', model_name, 'in models/ folder and saved plots in plots/ folder')
+
+    PLOT_SIZE = 10
+    autoencoder.eval()
     images, _ = next(iter(test_loader))
-    reconstructed = model(images[:PLOT_SIZE].to(DEVICE))
+    reconstructed = autoencoder(images[:PLOT_SIZE].to(DEVICE))
     np_images = images[:PLOT_SIZE].detach().cpu().numpy()
     np_reconstructed = reconstructed.detach().cpu().numpy()
     plot_images(np_images, np_reconstructed, plots_size=PLOT_SIZE)
 
 
 if __name__ == "__main__":
-    whole_train(AE())
-    # whole_train(GitAutoencoder())
-    # whole_train(GitAutoencoderMlp())
-    #
-    # i = torch.randn(1, 1, 28, 28)
-    # encoder = nn.Sequential(
-    #     nn.Conv2d(1, 16, kernel_size=5, stride=1, padding=0),  # 1x28x28 -> 16x24x24
-    #     nn.ReLU(True),
-    #     nn.MaxPool2d(kernel_size=2, stride=2),  # 16x24x24 -> 16x12x12
-    #     nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=0),  # 16x12x12 -> 32x8x8
-    #     nn.ReLU(True),
-    #     nn.MaxPool2d(kernel_size=2, stride=2),  # 32x8x8 -> 32x4x4
-    #     nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=0),  # 32x4x4 -> 64x2x2
-    # )
-    #
-    # mlp = nn.Sequential(
-    #     nn.Linear(64 * 2 * 2, 12),
-    #     nn.ReLU(True),
-    #     nn.Linear(12, 12),
-    #     nn.ReLU(True),
-    #     nn.Linear(12, 64 * 2 * 2),
-    #     nn.ReLU(True)
-    # )
-    #
-    # decoder = nn.Sequential(
-    #     nn.ConvTranspose2d(64, 32, kernel_size=3, stride=1, padding=0),  # 64x2x2 -> 32x4x4
-    #     nn.ReLU(True),
-    #     nn.Upsample(scale_factor=2, mode='nearest'),  # 32x4x4 -> 32x8x8
-    #     nn.ConvTranspose2d(32, 16, kernel_size=5, stride=1, padding=0),  # 32x8x8 -> 16x12x12
-    #     nn.ReLU(True),
-    #     nn.Upsample(scale_factor=2, mode='nearest'),  # 16x12x12 -> 16x24x24
-    #     nn.ConvTranspose2d(16, 1, kernel_size=5, stride=1, padding=0),  # 16x24x24 -> 1x28x28
-    #     nn.Sigmoid()  # Optional: Use if you want the output to be normalized (0, 1)
-    # )
-    #
-    # print(encoder(i).shape)
-    # encoder_output = encoder(i)
-    # mlp_output = mlp(encoder_output.view(i.size(0), -1))
-    # decoder_output = decoder(mlp_output.view(i.size(0), 64, 2, 2))
-    # print(decoder_output.shape)
+    whole_train()

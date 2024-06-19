@@ -88,3 +88,36 @@ class AE(nn.Module):
         # x = x.view(x.size(0), 32, 7, 7)
         x = self.decoder(x)
         return x
+
+
+## The following seem to work a little bit fine
+class AE(nn.Module):
+    def __init__(self):
+        super(AE, self).__init__()
+
+        # Encoder
+        self.encoder = nn.Sequential(nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1),  # 1x28x28 -> 16x28x28
+                                     nn.MaxPool2d(2, stride=2),  # 16x28x28 -> 16x14x14
+                                     nn.ReLU(True),
+                                     nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),  # 16x14x14 -> 32x14x14
+                                     nn.MaxPool2d(2, stride=2),  # 32x14x14 -> 32x7x7
+                                     nn.ReLU(True),
+                                     nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # 32x7x7 -> 64x7x7
+                                     nn.MaxPool2d(2, stride=2),  # 64x7x7 -> 64x3x3
+                                     nn.ReLU(True),
+                                     )
+
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=0, output_padding=0),  # 64x3x3 -> 32x7x7
+            nn.ReLU(True),
+            nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),  # 32x7x7 -> 16x14x14
+            nn.ReLU(True),
+            nn.ConvTranspose2d(16, 1, kernel_size=3, stride=2, padding=1, output_padding=1),  # 16x14x14 -> 1x28x28
+            nn.ReLU(True),
+            nn.Tanh()
+        )
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x
