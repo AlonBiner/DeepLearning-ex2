@@ -71,115 +71,48 @@ class Autoencoder(nn.Module):
         return x
 
 
+# Working dimensions model. but not learning well at all.
 class AE(nn.Module):
     def __init__(self):
         super(AE, self).__init__()
 
         # Encoder
-        self.encoder = nn.Sequential(nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1),  # 1x28x28 -> 16x28x28
-                                     nn.MaxPool2d(2, stride=2),  # 16x28x28 -> 16x14x14
-                                     nn.ReLU(True),
-                                     nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),  # 16x14x14 -> 32x14x14
-                                     nn.MaxPool2d(2, stride=2),  # 32x14x14 -> 32x7x7
-                                     nn.ReLU(True),
-                                     nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # 32x7x7 -> 64x7x7
-                                     nn.MaxPool2d(2, stride=2),  # 64x7x7 -> 64x3x3
-                                     nn.ReLU(True),
-                                     )
+        self.encoder = nn.Sequential(
+            nn.Conv2d(1, 16, kernel_size=5, stride=1, padding=0),  # 1x28x28 -> 16x24x24
+            nn.ReLU(True),
+            nn.MaxPool2d(kernel_size=2, stride=2),  # 16x24x24 -> 16x12x12
+            nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=0),  # 16x12x12 -> 32x8x8
+            nn.ReLU(True),
+            nn.MaxPool2d(kernel_size=2, stride=2),  # 32x8x8 -> 32x4x4
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=0),  # 32x4x4 -> 64x2x2
+            nn.ReLU(True),
+        )
+
+        self.fc = nn.Sequential(
+            nn.Linear(64 * 2 * 2, 12),
+            nn.ReLU(True),
+            nn.Linear(12, 12),
+            nn.ReLU(True),
+            nn.Linear(12, 64 * 2 * 2),
+            nn.ReLU(True)
+        )
 
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=0, output_padding=0),  # 64x3x3 -> 32x7x7
+            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=0, output_padding=0),  # 64x2x2 -> 32x5x5
             nn.ReLU(True),
-            nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),  # 32x7x7 -> 16x14x14
+            nn.ConvTranspose2d(32, 16, kernel_size=5, stride=2, padding=1, output_padding=1),  # 32x5x5 -> 16x12x12
             nn.ReLU(True),
-            nn.ConvTranspose2d(16, 1, kernel_size=3, stride=2, padding=1, output_padding=1),  # 16x14x14 -> 1x28x28
+            nn.ConvTranspose2d(16, 16, kernel_size=4, stride=2, padding=1, output_padding=0),  # 16x12x12 -> 16x24x24
             nn.ReLU(True),
-            nn.Tanh()
+            nn.ConvTranspose2d(16, 1, kernel_size=5, stride=1, padding=0),  # 16x24x24 -> 1x28x28
+            nn.Sigmoid()  # Optional: Use if you want the output to be normalized (0, 1)
         )
 
     def forward(self, x):
         x = self.encoder(x)
-        x = self.decoder(x)
-        return x
-
-# class AE(nn.Module):
-#     def __init__(self):
-#         super(AE, self).__init__()
-#         # Encoder
-#         self.encoder = nn.Sequential(nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1),  # 1x28x28 -> 16x28x28
-#                           nn.MaxPool2d(2, stride=2),  # 16x28x28 -> 16x14x14
-#                           nn.ReLU(True),
-#                           nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),  # 16x14x14 -> 32x14x14
-#                           nn.MaxPool2d(2, stride=2),  # 32x14x14 -> 32x7x7
-#                           nn.ReLU(True),
-#                           nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # 32x7x7 -> 64x7x7
-#                           nn.MaxPool2d(2, stride=2),  # 64x7x7 -> 64x3x3
-#                           nn.ReLU(True),
-#                           )
-#
-#         self.fc = nn.Sequential(
-#             nn.Linear(64 * 3 * 3, LATENT_DIM),
-#             nn.ReLU(),
-#             nn.Linear(LATENT_DIM, LATENT_DIM),
-#             nn.Linear(LATENT_DIM, LATENT_DIM),
-#             nn.Linear(LATENT_DIM, 64 * 3 * 3),
-#             nn.ReLU()
-#         )
-#
-#         self.decoder = nn.Sequential(
-#             nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=0, output_padding=0),  # 64x3x3 -> 32x7x7
-#             nn.ReLU(True),
-#             nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),  # 32x7x7 -> 16x14x14
-#             nn.ReLU(True),
-#             nn.ConvTranspose2d(16, 1, kernel_size=3, stride=2, padding=1, output_padding=1),  # 16x14x14 -> 1x28x28
-#             nn.ReLU(True),
-#             nn.Tanh()
-#         )
-#
-#     def forward(self, x):
-#         x = self.encoder(x)
-#         # x = x.view(x.size(0), -1)
-#         # x = self.fc(x)
-#         # x = x.view(x.size(0), 64, 3, 3)
-#         x = self.decoder(x)
-#         return x
-class GitEncoder(nn.Module):
-    def __init__(self):
-        super(GitEncoder, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Conv2d(1, 6, kernel_size=5),
-            nn.ReLU(True),
-            nn.Conv2d(6, 16, kernel_size=5),
-            nn.ReLU(True))
-
-    def forward(self, x):
-        x = self.encoder(x)
-        return x
-
-
-class GitDecoder(nn.Module):
-    def __init__(self):
-        super(GitDecoder, self).__init__()
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(16, 6, kernel_size=5),
-            nn.ReLU(True),
-            nn.ConvTranspose2d(6, 1, kernel_size=5),
-            nn.ReLU(True),
-            nn.Tanh())
-
-    def forward(self, x):
-        x = self.decoder(x)
-        return x
-
-
-class GitAutoencoderByParts(nn.Module):
-    def __init__(self):
-        super(GitAutoencoderByParts, self).__init__()
-        self.encoder = GitEncoder()
-        self.decoder = GitDecoder()
-
-    def forward(self, x):
-        x = self.encoder(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        x = x.view(x.size(0), 64, 2, 2)
         x = self.decoder(x)
         return x
 
@@ -193,6 +126,19 @@ class GitAutoencoder(nn.Module):
             nn.Conv2d(6, 16, kernel_size=5),
             nn.ReLU(True))
 
+        self.fc = nn.Sequential(
+            nn.Linear(16 * 20 * 20, LATENT_DIM),  # Adjusted input size
+            nn.ReLU(True),
+            # nn.Linear(150, LATENT_DIM),
+            # nn.ReLU(True),
+            nn.Linear(LATENT_DIM, LATENT_DIM),
+            nn.ReLU(True),
+            # nn.Linear(LATENT_DIM, 150),
+            # nn.ReLU(True),
+            nn.Linear(LATENT_DIM, 16 * 20 * 20),  # Adjusted output size
+            nn.ReLU(True)
+        )
+
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(16, 6, kernel_size=5),
             nn.ReLU(True),
@@ -202,5 +148,8 @@ class GitAutoencoder(nn.Module):
 
     def forward(self, x):
         x = self.encoder(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        x = x.view(x.size(0), 16, 20, 20)
         x = self.decoder(x)
         return x

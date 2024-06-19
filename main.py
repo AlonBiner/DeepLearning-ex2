@@ -57,7 +57,7 @@ def evaluate(model, dataloader, criterion):
 
 def whole_train(model):
     model.to(DEVICE)
-    BATCH_SIZE = 128
+    BATCH_SIZE = 32
 
     train_loader = get_train_loader(batch_size=BATCH_SIZE, shuffle=True)
     test_loader = get_test_loader(batch_size=BATCH_SIZE, shuffle=False)
@@ -79,46 +79,42 @@ def whole_train(model):
 
 if __name__ == "__main__":
     whole_train(AE())
-
-
     # whole_train(GitAutoencoder())
-
-
-    # e = nn.Sequential(nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1),  # 1x28x28 -> 16x28x28
-    #                   nn.MaxPool2d(2, stride=2),  # 16x28x28 -> 16x14x14
-    #                   nn.ReLU(True),
-    #                   nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),  # 16x14x14 -> 32x14x14
-    #                   nn.MaxPool2d(2, stride=2),  # 32x14x14 -> 32x7x7
-    #                   nn.ReLU(True),
-    #                   nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # 32x7x7 -> 64x7x7
-    #                   nn.MaxPool2d(2, stride=2),  # 64x7x7 -> 64x3x3
-    #                   nn.ReLU(True),
-    #                   )
+    # whole_train(GitAutoencoderMlp())
     #
-    # fc = nn.Sequential(
-    #     nn.Linear(64 * 3 * 3, 12),
-    #     nn.ReLU(),
-    #     nn.Linear(12, 64 * 3 * 3),
-    #     nn.ReLU()
+    # i = torch.randn(1, 1, 28, 28)
+    # encoder = nn.Sequential(
+    #     nn.Conv2d(1, 16, kernel_size=5, stride=1, padding=0),  # 1x28x28 -> 16x24x24
+    #     nn.ReLU(True),
+    #     nn.MaxPool2d(kernel_size=2, stride=2),  # 16x24x24 -> 16x12x12
+    #     nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=0),  # 16x12x12 -> 32x8x8
+    #     nn.ReLU(True),
+    #     nn.MaxPool2d(kernel_size=2, stride=2),  # 32x8x8 -> 32x4x4
+    #     nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=0),  # 32x4x4 -> 64x2x2
     # )
     #
-    # d = nn.Sequential(
-    #     nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=0, output_padding=0),  # 64x3x3 -> 32x7x7
+    # mlp = nn.Sequential(
+    #     nn.Linear(64 * 2 * 2, 12),
     #     nn.ReLU(True),
-    #     nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),  # 32x7x7 -> 16x14x14
+    #     nn.Linear(12, 12),
     #     nn.ReLU(True),
-    #     nn.ConvTranspose2d(16, 1, kernel_size=3, stride=2, padding=1, output_padding=1),  # 16x14x14 -> 1x28x28
-    #     nn.ReLU(True),
-    #     nn.Tanh()
+    #     nn.Linear(12, 64 * 2 * 2),
+    #     nn.ReLU(True)
     # )
     #
-    # oe = e((torch.randn(1, 1, 28, 28)))
-    # print(oe.shape)
+    # decoder = nn.Sequential(
+    #     nn.ConvTranspose2d(64, 32, kernel_size=3, stride=1, padding=0),  # 64x2x2 -> 32x4x4
+    #     nn.ReLU(True),
+    #     nn.Upsample(scale_factor=2, mode='nearest'),  # 32x4x4 -> 32x8x8
+    #     nn.ConvTranspose2d(32, 16, kernel_size=5, stride=1, padding=0),  # 32x8x8 -> 16x12x12
+    #     nn.ReLU(True),
+    #     nn.Upsample(scale_factor=2, mode='nearest'),  # 16x12x12 -> 16x24x24
+    #     nn.ConvTranspose2d(16, 1, kernel_size=5, stride=1, padding=0),  # 16x24x24 -> 1x28x28
+    #     nn.Sigmoid()  # Optional: Use if you want the output to be normalized (0, 1)
+    # )
     #
-    # oe = oe.view(oe.size(0), -1)
-    # ofc = fc(oe)
-    # ofc = ofc.view(ofc.size(0), 64, 3, 3)
-    # print(ofc.shape)
-    #
-    # od = d(ofc)
-    # print(od.shape)
+    # print(encoder(i).shape)
+    # encoder_output = encoder(i)
+    # mlp_output = mlp(encoder_output.view(i.size(0), -1))
+    # decoder_output = decoder(mlp_output.view(i.size(0), 64, 2, 2))
+    # print(decoder_output.shape)
