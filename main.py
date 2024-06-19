@@ -71,7 +71,7 @@ def whole_train():
     lr = optimizer.param_groups[0]['lr']
     name = f"{model_name}_{current_time}_lr_{lr}"
     torch.save(autoencoder, f"models/{name}")
-    plot([train_loss, test_loss], f"plots/{name}")
+    plot([train_loss, test_loss], f"models/plots/{name}")
     print('Finished Training, saved', model_name, 'in models/ folder and saved plots in plots/ folder')
 
     PLOT_SIZE = 10
