@@ -1,26 +1,8 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 LATENT_DIM = 12
 
-
-# Encoder
-# 1x28x28 -> 16x24x24
-# 16x24x24 -> 16x12x12 by maxpool
-# 16x12x12 -> 32x8x8
-# 32x8x8 -> 32x4x4 by maxpool
-# 32x4x4 -> 64x2x2
-
-# Fully connected:
-# 64x2x2 -> 12 by fully connected
-# 12 -> 64x2x2 by fully connected
-
-# Decoder
-# 64x2x2 -> 32x5x5 by convtranspose
-# 32x5x5 -> 16x12x12 by convtranspose
-# 16x12x12 -> 16x24x24 by convtranspose
-# 16x24x24 -> 1x28x28 by convtranspose
 
 class Encoder(nn.Module):
     def __init__(self):
@@ -35,29 +17,22 @@ class Encoder(nn.Module):
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=0),  # 32x4x4 -> 64x2x2
             nn.ReLU(True),
         )
+        self.linear = nn.Linear(64 * 2 * 2, LATENT_DIM)
+        self.relu = nn.ReLU(True)
 
     def forward(self, x):
-        return self.encoder(x)
-
-
-class FullyConnected(nn.Module):
-    def __init__(self):
-        super(FullyConnected, self).__init__()
-        self.fc = nn.Sequential(
-            nn.Linear(64 * 2 * 2, 12),
-            nn.ReLU(True),
-            nn.Linear(12, 64 * 2 * 2),
-            nn.ReLU(True)
-        )
-
-    def forward(self, x):
-        x = self.fc(x)
+        x = self.encoder(x)
+        x = x.view(x.size(0), -1)
+        x = self.linear(x)
+        x = self.relu(x)
         return x
 
 
 class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
+        self.linear = nn.Linear(12, 64 * 2 * 2)
+        self.relu = nn.ReLU(True)
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=0, output_padding=0),  # 64x2x2 -> 32x5x5
             nn.ReLU(True),
@@ -69,21 +44,52 @@ class Decoder(nn.Module):
         )
 
     def forward(self, x):
-        return self.decoder(x)
+        x = self.linear(x)
+        x = self.relu(x)
+        x = x.view(x.size(0), 64, 2, 2)
+        x = self.decoder(x)
+        return x
 
 
 # Autoencoder
 class Autoencoder(nn.Module):
-    def __init__(self):
+    def __init__(self, _encoder, _decoder, train_encoder=True):
         super(Autoencoder, self).__init__()
-        self.encoder = Encoder()
-        self.fc = FullyConnected()
-        self.decoder = Decoder()
+        self.encoder = _encoder
+        self.decoder = _decoder
+        self.train_encoder = train_encoder
+
+    def forward(self, x):
+        if not self.train_encoder:
+            with torch.no_grad():
+                x = self.encoder(x)
+        else:
+            x = self.encoder(x)
+        x = self.decoder(x)
+        return x
+
+
+class MLP(nn.Module):
+    def __init__(self):
+        super(MLP, self).__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(LATENT_DIM, 50),
+            nn.ReLU(True),
+            nn.Linear(50, 10),
+        )
+
+    def forward(self, x):
+        x = self.mlp(x)
+        return x
+
+
+class DigitClassifier(nn.Module):
+    def __init__(self, _encoder, _mlp):
+        super(DigitClassifier, self).__init__()
+        self.encoder = _encoder
+        self.mlp = _mlp
 
     def forward(self, x):
         x = self.encoder(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-        x = x.view(x.size(0), 64, 2, 2)
-        x = self.decoder(x)
+        x = self.mlp(x)
         return x

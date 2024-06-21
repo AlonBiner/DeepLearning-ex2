@@ -1,19 +1,30 @@
 import torch
 from data_loading import get_test_loader
-from plots import plot_images
 
-if __name__ == '__main__':
-    DEVICE = torch.device(
-        "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-    BATCH_SIZE = 20
+
+def classifier(model, device):
+    BATCH_SIZE = 10
 
     test_loader = get_test_loader(batch_size=BATCH_SIZE, shuffle=False)
-    images, _ = next(iter(test_loader))
+    images, labels = next(iter(test_loader))
 
-    model_path = "Autoencoder_14:21:27_19-June-2024_lr_0.001.png"
+    model_path = ""
     model = torch.load(f"models/{model_path}", map_location=DEVICE)
-    reconstructed = model(images.to(DEVICE))
+    outputs = model(images.to(DEVICE))
 
-    np_images = images.detach().cpu().numpy()
-    np_reconstructed = reconstructed.detach().cpu().numpy()
-    plot_images(np_images, np_reconstructed, plots_size=BATCH_SIZE)
+    _, predicted = torch.max(outputs, 1)
+
+    print("True Labels  :", end=" ")
+    for label in labels:
+        print(f"{label:2}", end=" ")
+
+    print("\nPredicted    :", end=" ")
+    for pred in predicted:
+        print(f"{pred:2}", end=" ")
+
+    print("\n")
+
+
+if __name__ == '__main__':
+    ae()
+    # classifier()

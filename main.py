@@ -1,87 +1,66 @@
+import numpy as np
 import torch
-import torch.nn as nn
-from data_loading import get_train_loader, get_test_loader
-from models import Autoencoder
-from datetime import datetime
-from plots import plot, plot_images
+from plots import reconstruct_images_plot
+import models
+from autoencoder import autoencoder_train
+from digit_classifier import classifier_train
+from models import (Autoencoder, Encoder, Decoder,
+                    DigitClassifier, MLP)
 
 DEVICE = torch.device(
     "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-print(f"Using device: {DEVICE}")
+print("Device:", DEVICE)
 
 
-# Training and Evaluation
-def train_model(model, criterion, optimizer, train_loader, test_loader, num_epochs=20):
-    train_losses = []
-    test_losses = []
-
-    for epoch in range(num_epochs):
-        model.train()
-        for images, _ in train_loader:
-            images = images.to(DEVICE)
-            outputs = model(images)
-            loss = criterion(outputs, images)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-        train_loss = evaluate(model, train_loader, criterion)
-        train_losses.append(train_loss)
-
-        test_loss = evaluate(model, test_loader, criterion)
-        test_losses.append(test_loss)
-
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss}')
-    return train_losses, test_losses
+def load_model(model_path):
+    return torch.load(model_path, map_location=DEVICE)
 
 
-def evaluate(model, dataloader, criterion):
-    model.eval()
-    test_loss = 0.0
-    with torch.no_grad():
-        for images, _ in dataloader:
-            images = images.to(DEVICE)
-            outputs = model(images)
-            loss = criterion(outputs, images)
-            test_loss += loss.item() * images.size(0)
-
-    test_loss /= len(dataloader.dataset)
-    return test_loss
+def Q1():
+    ae = Autoencoder(Encoder(), Decoder())
+    autoencoder_train(model=ae, device=DEVICE, batch_size=64, epochs=8, lr=1e-3, save_encoder=True)
 
 
-def whole_train():
-    batch_size = 32
-    epochs = 20
-
-    train_loader = get_train_loader(batch_size=batch_size, shuffle=True)
-    test_loader = get_test_loader(batch_size=batch_size, shuffle=False)
-
-    autoencoder = Autoencoder().to(DEVICE)
-    device = next(autoencoder.parameters()).device
-    print("Model is on device:", device)
-
-    criterion = nn.L1Loss()
-    optimizer = torch.optim.Adam(autoencoder.parameters(), lr=1e-3)
-    train_loss, test_loss = train_model(autoencoder, criterion, optimizer, train_loader, test_loader, num_epochs=epochs)
-
-    # Model saving and plotting
-    model_name = autoencoder.__class__.__name__
-    current_time = datetime.now().strftime("%H:%M:%S_%d-%B-%Y")
-    lr = optimizer.param_groups[0]['lr']
-    name = f"{model_name}_{current_time}_lr_{lr}"
-    torch.save(autoencoder, f"models/{name}")
-    plot([train_loss, test_loss], f"models/plots/{name}")
-    print('Finished Training, saved', model_name, 'in models/ folder and saved plots in plots/ folder')
-
-    PLOT_SIZE = 10
-    autoencoder.eval()
-    images, _ = next(iter(test_loader))
-    reconstructed = autoencoder(images[:PLOT_SIZE].to(DEVICE))
-    np_images = images[:PLOT_SIZE].detach().cpu().numpy()
-    np_reconstructed = reconstructed.detach().cpu().numpy()
-    plot_images(np_images, np_reconstructed, plots_size=PLOT_SIZE)
+def Q2():
+    dc = DigitClassifier(Encoder(), MLP())
+    classifier_train(model=dc, device=DEVICE, batch_size=64, epochs=3, lr=1e-3)
 
 
-if __name__ == "__main__":
-    whole_train()
+def Q3():
+    pretrained_encoder_path = \
+        "trained_data/models_data/Encoder_Of_Question_1__14-41-34__21-06-2024_lr_0.001_epochs_8_batch_64"
+    pretrained_encoder = load_model(pretrained_encoder_path)
+    pretrain_ae = Autoencoder(pretrained_encoder, Decoder(), train_encoder=False)
+    autoencoder_train(model=pretrain_ae, device=DEVICE, batch_size=64, epochs=8, lr=1e-3, save_encoder=False)
+
+
+def Q4():
+    dc = DigitClassifier(Encoder(), MLP())
+    classifier_train(model=dc, device=DEVICE, batch_size=3, epochs=2, lr=1e-3, samples_num=100)
+
+
+def Q5():
+    pre_encoder_path = "trained_data/boutique_models/Encoder_12:46:40_20-June-2024_lr_0.001_epochs_17_batch_64"
+    pre_encoder = load_model(pre_encoder_path)
+    digit_classifier_pretrained = DigitClassifier(pre_encoder, MLP())
+    classifier_train(digit_classifier_pretrained, device=DEVICE, batch_size=10, epochs=2, lr=1e-3, samples_num=100)
+
+
+def reconstruct_images(image_num=20):
+    Q1_model_path = "trained_data/models_data/Autoencoder_14-41-34__21-06-2024_lr_0.001_epochs_8_batch_64"
+    reconstruct_images_plot(model_path=Q1_model_path, device=DEVICE, image_num=image_num)
+
+    Q3_model_path = "trained_data/models_data/Autoencoder_14-57-29__21-06-2024_lr_0.001_epochs_8_batch_64"
+    reconstruct_images_plot(model_path=Q3_model_path, device=DEVICE, image_num=image_num)
+
+
+if __name__ == '__main__':
+    models.LATENT_DIM = 12
+
+    # Q1()
+    # Q2()
+    # Q3()
+    # Q4()
+    # Q5()
+    # reconstruct_images(image_num=70)
+    pass
