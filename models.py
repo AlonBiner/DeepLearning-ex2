@@ -14,16 +14,16 @@ class Encoder(nn.Module):
             nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=0),  # 16x12x12 -> 32x8x8
             nn.ReLU(True),
             nn.MaxPool2d(kernel_size=2, stride=2),  # 32x8x8 -> 32x4x4
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=0),  # 32x4x4 -> 64x2x2
-            nn.ReLU(True),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=0),  # 32x4x4 -> 32x2x2
+            nn.ReLU(True)
         )
         self.linear = nn.Sequential(
-            nn.Linear(64 * 2 * 2, LATENT_DIM),
-            nn.ReLU(True))  # 256 -> 12
+            nn.Linear(32 * 2 * 2, LATENT_DIM),
+            nn.ReLU(True))  # 128 -> 12
 
     def forward(self, x):
         x = self.encoder(x)
-        x = x.view(x.size(0), -1)  # Making the encoder output flat (Into vector)
+        x = x.view(x.size(0), -1)  # Making the encoder output flat (into vector)
         x = self.linear(x)
         return x
 
@@ -32,11 +32,11 @@ class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
         self.linear = nn.Sequential(
-            nn.Linear(LATENT_DIM, 64 * 2 * 2),
+            nn.Linear(LATENT_DIM, 32 * 2 * 2),
             nn.ReLU(True)
         )
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=0, output_padding=0),  # 64x2x2 -> 32x5x5
+            nn.ConvTranspose2d(32, 32, kernel_size=3, stride=2, padding=0, output_padding=0),  # 32x2x2 -> 32x5x5
             nn.ReLU(True),
             nn.ConvTranspose2d(32, 16, kernel_size=5, stride=2, padding=1, output_padding=1),  # 32x5x5 -> 16x12x12
             nn.ReLU(True),
@@ -47,7 +47,7 @@ class Decoder(nn.Module):
 
     def forward(self, x):
         x = self.linear(x)
-        x = x.view(x.size(0), 64, 2, 2)
+        x = x.view(x.size(0), 32, 2, 2)
         x = self.decoder(x)
         return x
 

@@ -19,7 +19,7 @@ def load_model(model_path):
 def Q1():
     ae = Autoencoder(Encoder(), Decoder())
     print("Q1 autoencoder get 28x28 and output:", ae(torch.randn((1, 1, 28, 28))).shape)
-    autoencoder_train(model=ae, device=DEVICE, batch_size=64, epochs=5, lr=1e-3, save_encoder=True)
+    autoencoder_train(model=ae, device=DEVICE, batch_size=64, epochs=25, lr=1e-3, save_encoder=True)
 
 
 def Q2():
@@ -41,10 +41,10 @@ def Q4():
 
 
 def Q5():
-    pre_encoder_path = "trained_data/choosen_models/Encoder_12:46:40_20-June-2024_lr_0.001_epochs_17_batch_64"
+    pre_encoder_path = "trained_data/models_data/Encoder_Of_Question_1__15-44-50__27-06-2024_lr_0.001_epochs_25_batch_64"
     pre_encoder = load_model(pre_encoder_path)
     digit_classifier_pretrained = DigitClassifier(pre_encoder, MLP())
-    classifier_train(digit_classifier_pretrained, device=DEVICE, batch_size=10, epochs=2, lr=1e-3, samples_num=100)
+    classifier_train(digit_classifier_pretrained, device=DEVICE, batch_size=64, epochs=100, lr=1e-3, samples_num=100)
 
 
 def reconstruct_images(image_num=20):
@@ -60,11 +60,16 @@ def reconstruct_images(image_num=20):
 if __name__ == '__main__':
     models.LATENT_DIM = 12
 
-    Q1()
+    # Q1()
     # Q2()
     # Q3()
     # Q4()
-    # Q5()
+    Q5()
+
     # reconstruct_images(image_num=70)
+
+    # path = \
+    #     "trained_data/models_data/Autoencoder_Of_Question_1__15-28-07__27-06-2024_lr_0.001_epochs_8_batch_64"
+    # reconstruct_images_plot(model_path=path, device=DEVICE, image_num=10)
 
     pass
