@@ -4,10 +4,6 @@ import torch.utils.data as data
 import torchvision
 import torchvision.transforms as transforms
 
-# Define a transform to normalize the data
-transform = transforms.Compose([transforms.ToTensor(),
-                                transforms.Normalize((0.5,), (0.5,))])
-
 # Download the training and test datasets
 TRAIN_SET = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transforms.ToTensor())
 TEST_SET = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transforms.ToTensor())
