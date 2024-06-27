@@ -18,7 +18,8 @@ def load_model(model_path):
 
 def Q1():
     ae = Autoencoder(Encoder(), Decoder())
-    autoencoder_train(model=ae, device=DEVICE, batch_size=64, epochs=8, lr=1e-3, save_encoder=True)
+    print("Q1 autoencoder get 28x28 and output:", ae(torch.randn((1, 1, 28, 28))).shape)
+    autoencoder_train(model=ae, device=DEVICE, batch_size=64, epochs=5, lr=1e-3, save_encoder=True)
 
 
 def Q2():
@@ -59,7 +60,7 @@ def reconstruct_images(image_num=20):
 if __name__ == '__main__':
     models.LATENT_DIM = 12
 
-    # Q1()
+    Q1()
     # Q2()
     # Q3()
     # Q4()
