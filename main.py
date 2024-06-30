@@ -30,16 +30,10 @@ def Q2():
 
 def Q3():
     pretrained_encoder_path = \
-        "trained_data/models_data/DigitClassifierEncoder_of_question2_09-58-42__29-06-2024_lr_0.001_epochs_6_batch_64"
+        "trained_data/models_data/EncoderEncoder_of_question_2_10-37-02__30-06-2024_lr_0.001_epochs_6_batch_64"
     pretrained_encoder = load_model(pretrained_encoder_path)
-
-    # Print encoder output shape for verification
-    dummy_input = torch.randn(1, 1, 28, 28).to(DEVICE)
-    encoder_output = pretrained_encoder(dummy_input)
-    print(f'Encoder output shape: {encoder_output.shape}')
-
     pretrain_ae = Autoencoder(pretrained_encoder, Decoder(), train_encoder=False)
-    autoencoder_train(model=pretrain_ae, device=DEVICE, batch_size=64, epochs=6, lr=1e-3, save_encoder=False)
+    autoencoder_train(model=pretrain_ae, device=DEVICE, batch_size=64, epochs=1, lr=1e-3, save_encoder=False)
 
 
 def Q4():
@@ -54,17 +48,37 @@ def Q5():
     classifier_train(digit_classifier_pretrained, device=DEVICE, batch_size=32, epochs=50, lr=1e-3, samples_num=100)
     # classifier_train(digit_classifier_pretrained, device=DEVICE, batch_size=32, epochs=25, lr=1e-3, samples_num=100)
 
-def reconstruct_images(image_num=20):
+
+def reconstruct_images_models(image_num=20):
+    """
+    This function will reconstruct images using the models trained in Q1 and Q3
+    It's will save the images in the folder "trained_data/reconstructed_images"
+    The first image will be of Model Q1 and the second image will be of Model Q3
+    :param image_num: number of images to reconstruct and compare of the two models
+    :return:
+    """
     # Q1_model_path = \
     #     "trained_data/models_data/Autoencoder_Of_Question_1__15-19-30__21-06-2024_lr_0.001_epochs_8_batch_64"
     Q1_model_path = \
-         "trained_data/models_data/Autoencoder_Of_Question_1__18-09-06__28-06-2024_lr_0.001_epochs_25_batch_64"
+        "trained_data/models_data/Autoencoder_Of_Question_1__18-09-06__28-06-2024_lr_0.001_epochs_25_batch_64"
 
     reconstruct_images_plot(model_path=Q1_model_path, device=DEVICE, image_num=image_num)
 
     Q3_model_path = \
         "trained_data/models_data/Autoencoder_Of_Question_1__15-19-30__21-06-2024_lr_0.001_epochs_8_batch_64"
     reconstruct_images_plot(model_path=Q3_model_path, device=DEVICE, image_num=image_num)
+
+
+def reconstruct_images(image_num=10):
+    """
+    This function will reconstruct images of given one model only.
+    :param image_num:
+    :return:
+    """
+    model_path = \
+        "trained_data/models_data/Autoencoder_Of_Question_1__18-09-06__28-06-2024_lr_0.001_epochs_25_batch_64"
+
+    reconstruct_images_plot(model_path=model_path, device=DEVICE, image_num=image_num)
 
 
 if __name__ == '__main__':
@@ -75,10 +89,6 @@ if __name__ == '__main__':
     Q3()
     # Q4()
     # Q5()
+    # reconstruct_images_models(image_num=70)
     # reconstruct_images(image_num=10)
-
-    # path = \
-    #      "trained_data/models_data/Autoencoder_Of_Question_1__16-55-32__28-06-2024_lr_0.001_epochs_25_batch_64"
-    # reconstruct_images_plot(model_path=path, device=DEVICE, image_num=10)
-
     pass
