@@ -75,7 +75,7 @@ def evaluate(model, dataloader, criterion):
     return test_loss, accuracy
 
 
-def classifier_train(model, device, batch_size=64, epochs=6, lr=1e-3, samples_num=None):
+def classifier_train(model, device, batch_size=64, epochs=6, lr=1e-3, samples_num=None, save_encoder=False):
 
     train_loader = get_train_loader(batch_size=batch_size, shuffle=True, samples_num=samples_num)
     test_loader = get_test_loader(batch_size=batch_size, shuffle=False)
@@ -89,6 +89,8 @@ def classifier_train(model, device, batch_size=64, epochs=6, lr=1e-3, samples_nu
 
     description = f"_samples_{samples_num}_" if samples_num else ""
     save_model(model, optimizer, epochs, batch_size, description=description)
+    if save_encoder:
+        save_model(model, optimizer, epochs, batch_size, description="Encoder_of_question2" + description)
     plot_graph(model, train_loss, test_loss, train_accuracy, test_accuracy)
 
 
