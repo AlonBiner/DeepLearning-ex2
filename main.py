@@ -30,11 +30,11 @@ def Q2():
 
 def Q3():
     pretrained_encoder_path = \
-        "trained_data/models_data/EncoderEncoder_of_question_2_10-37-02__30-06-2024_lr_0.001_epochs_6_batch_64"
+        "trained_data/models_data/Encoder_Of_Question_2_10-56-16__30-06-2024_lr_0.001_epochs_6_batch_64"
     pretrained_encoder = load_model(pretrained_encoder_path)
     pretrain_ae = Autoencoder(pretrained_encoder, Decoder(), train_encoder=False)
-    autoencoder_train(model=pretrain_ae, device=DEVICE, batch_size=64, epochs=1, lr=1e-3, save_encoder=False)
-
+    autoencoder_train(model=pretrain_ae, device=DEVICE, batch_size=64, epochs=6, lr=1e-3, save_encoder=False)
+    reconstruct_images_models(50)
 
 def Q4():
     dc = DigitClassifier(Encoder(), MLP())
@@ -57,15 +57,14 @@ def reconstruct_images_models(image_num=20):
     :param image_num: number of images to reconstruct and compare of the two models
     :return:
     """
-    # Q1_model_path = \
-    #     "trained_data/models_data/Autoencoder_Of_Question_1__15-19-30__21-06-2024_lr_0.001_epochs_8_batch_64"
     Q1_model_path = \
         "trained_data/models_data/Autoencoder_Of_Question_1__18-09-06__28-06-2024_lr_0.001_epochs_25_batch_64"
 
     reconstruct_images_plot(model_path=Q1_model_path, device=DEVICE, image_num=image_num)
 
     Q3_model_path = \
-        "trained_data/models_data/Autoencoder_Of_Question_1__15-19-30__21-06-2024_lr_0.001_epochs_8_batch_64"
+        "trained_data/models_data/Autoencoder_11-41-42__30-06-2024_lr_0.001_epochs_6_batch_64"
+
     reconstruct_images_plot(model_path=Q3_model_path, device=DEVICE, image_num=image_num)
 
 
@@ -86,9 +85,9 @@ if __name__ == '__main__':
 
     # Q1()
     # Q2()
-    Q3()
+    # Q3()
     # Q4()
     # Q5()
-    # reconstruct_images_models(image_num=70)
+    reconstruct_images_models(image_num=50)
     # reconstruct_images(image_num=10)
     pass
