@@ -1,3 +1,5 @@
+MNIST Autoencoder and Classifier Project
+
 1. Autoencoder
 Objective: Encode and decode images into a latent space (~d=12).
 Architecture: Convolutional autoencoder with separate encoder, decoder, and MLP models.
