@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from data_loading import get_train_loader, get_test_loader
 from plots import plot_graph, save_model
-import copy
 
 DEVICE = torch.device(
     "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -69,6 +68,4 @@ def autoencoder_train(model, device, batch_size=64, epochs=17, lr=1e-3, save_enc
 
 
 if __name__ == "__main__":
-    # autoencoder()
-    # autoencoder_pretrained()
     pass
