@@ -26,5 +26,5 @@ def classifier(model, device):
 
 
 if __name__ == '__main__':
-    ae()
     # classifier()
+    pass
