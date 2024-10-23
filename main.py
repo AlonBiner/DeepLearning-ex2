@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # Q2()
     # Q3()
     # Q4()
-    # Q5()
-    reconstruct_images_models(image_num=50)
+    Q5()
+    # reconstruct_images_models(image_num=70)
     # reconstruct_images(image_num=10)
     pass
